@@ -44,12 +44,14 @@ chmod 600 "$SSH_DIR/include.d/github"
 
 # Ensure the main config includes our new file
 TOUCH_CONFIG="$SSH_DIR/config"
-touch "$TOUCH_CONFIG"
 INCLUDE_LINE="Include ~/.ssh/include.d/github"
 
-if ! grep -q "$INCLUDE_LINE" "$TOUCH_CONFIG"; then
-    # Prepend the Include line to the top of the file
-    sed -i "1i $INCLUDE_LINE" "$TOUCH_CONFIG"
+# Create file if missing; use >> to append securely if content is needed
+if [ ! -f "$TOUCH_CONFIG" ]; then
+    echo "$INCLUDE_LINE" > "$TOUCH_CONFIG"
+elif ! grep -q "$INCLUDE_LINE" "$TOUCH_CONFIG"; then
+    # Using a temporary file ensures the line is at the top even for empty files
+    echo -e "$INCLUDE_LINE\n$(cat "$TOUCH_CONFIG")" > "$TOUCH_CONFIG"
 fi
 chmod 600 "$TOUCH_CONFIG"
 
