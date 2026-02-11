@@ -86,11 +86,28 @@ fi
 gh auth status -h github.com
 
 
+
 echo "--- Verifying SSH connectivity to GitHub ---"
-# Avoid script exit on non-zero from ssh
-set +e
-ssh -T git@github.com || echo "Note: SSH test non-zero exit code is normal."
-set -e
+# Run SSH in a conditional so set -e doesn't kill the script on non-zero
+if ssh -T -o BatchMode=yes -o StrictHostKeyChecking=accept-new git@github.com; then
+    echo "SSH OK (exit 0)."
+else
+    rc=$?
+    case "$rc" in
+        1)
+            # GitHub often prints the greeting and exits 1 for -T (no shell)
+            echo "SSH to GitHub succeeded (expected greeting then exit 1)."
+            ;;
+        255)
+            echo "WARNING: SSH to GitHub failed with 255 (connection/hostkey/auth)."
+            echo "Check network/proxy, firewall, and permissions on $SSH_DIR (700) and keys (600)."
+            ;;
+        *)
+            echo "NOTE: SSH to GitHub returned $rc; continuing."
+            ;;
+    esac
+fi
+
 
 # 5. Clone private repo and run post-install script
 echo "--- Cloning dotfiles repo ---"
