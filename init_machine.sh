@@ -90,26 +90,45 @@ gh auth status -h github.com
 
 
 
+# --- Verifying SSH connectivity to GitHub (safe under set -euo pipefail) ---
+check_github_ssh() {
+  # Temporarily disable the ERR trap because ssh -T intentionally returns 1 on success
+  local _orig_trap
+  _orig_trap=$(trap -p ERR || true)
+
+  trap - ERR
+  set +e
+
+  ssh -T -o BatchMode=yes -o StrictHostKeyChecking=accept-new git@github.com
+  local rc=$?
+
+  # Restore shell options and ERR trap
+  set -e
+  # shellcheck disable=SC2064
+  [ -n "$_orig_trap" ] && eval "$_orig_trap" || true
+
+  case "$rc" in
+    0)
+      echo "SSH OK (exit 0)."
+      ;;
+    1)
+      # GitHub typically greets then exits 1 for -T (no shell). That's a pass.
+      echo "SSH to GitHub succeeded (expected greeting then exit 1)."
+      ;;
+    255)
+      echo "WARNING: SSH to GitHub failed with 255 (connection/hostkey/auth)."
+      echo "Check network/proxy, firewall, and permissions on $SSH_DIR (700) and keys (600)." >&2
+      ;;
+    *)
+      echo "NOTE: SSH to GitHub returned $rc; continuing."
+      ;;
+  esac
+
+  # Always return success so set -e won't abort the script here
+  return 0
+}
 echo "--- Verifying SSH connectivity to GitHub ---"
-# Run SSH in a conditional so set -e doesn't kill the script on non-zero
-if ssh -T -o BatchMode=yes -o StrictHostKeyChecking=accept-new git@github.com; then
-    echo "SSH OK (exit 0)."
-else
-    rc=$?
-    case "$rc" in
-        1)
-            # GitHub often prints the greeting and exits 1 for -T (no shell)
-            echo "SSH to GitHub succeeded (expected greeting then exit 1)."
-            ;;
-        255)
-            echo "WARNING: SSH to GitHub failed with 255 (connection/hostkey/auth)."
-            echo "Check network/proxy, firewall, and permissions on $SSH_DIR (700) and keys (600)."
-            ;;
-        *)
-            echo "NOTE: SSH to GitHub returned $rc; continuing."
-            ;;
-    esac
-fi
+check_github_ssh
 
 
 # 5. Clone private repo and run post-install script
