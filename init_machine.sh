@@ -7,6 +7,10 @@
 ###################
 
 set -euo pipefail
+# Debug trap: prints the line number and command that failed
+trap 'rc=$?; echo "ERROR: command failed (exit $rc) at line $LINENO: $BASH_COMMAND" >&2' ERR
+``
+
 
 # 1. Install GitHub CLI
 echo "--- Installing GitHub CLI ---"
@@ -67,7 +71,7 @@ fi
 
 # 4b. Upload the SSH key only if not already present
 echo "--- Ensuring SSH key is uploaded to GitHub ---"
-PUBKEY_CONTENT="$(cat "${SSH_KEY}.pub" | awk '{print $1" "$2}')"
+PUBKEY_CONTENT="$(cut -d' ' -f1-2 "${SSH_KEY}.pub")"
 
 # Query existing SSH keys and check for an exact key match (by content)
 
@@ -77,7 +81,7 @@ if gh api -H "Accept: application/vnd.github+json" /user/keys \
     | grep -qxF "$PUBKEY_CONTENT"; then
   echo "--- SSH public key already present on GitHub; skipping upload ---"
 else
-  gh ssh-key add "${SSH_KEY}.pub" --title "Arch Machine $(hostname)"
+  gh ssh-key add "${SSH_KEY}.pub" --title "Machine $(hostname)"
   echo "--- SSH key uploaded to GitHub ---"
 fi
 
