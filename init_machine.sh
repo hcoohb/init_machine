@@ -14,7 +14,7 @@ set -e
 
 # 1. Install GitHub CLI
 echo "--- Installing GitHub CLI ---"
-sudo pacman -S --needed github-cli openssh curl read --noconfirm
+sudo pacman -S --needed github-cli openssh curl --noconfirm
 
 # 2. Generate SSH Key (ED25519)
 SSH_DIR="$HOME/.ssh"
