@@ -89,32 +89,11 @@ gh auth status -h github.com
 echo "--- Verifying SSH connectivity to GitHub ---"
 # Avoid script exit on non-zero from ssh
 set +e
-# Auto-accept new host key if first-time, and test the connection
-ssh -T -o StrictHostKeyChecking=accept-new git@github.com
-ssh_rc=$?
+ssh -T git@github.com || echo "Note: SSH test non-zero exit code is normal."
 set -e
 
-# Interpret common return codes:
-#  1   = GitHub printed the greeting then closed (this is normal for ssh -T)
-# 255  = Connection/hostkey/auth issue (first-time host key or real problem)
-case "$ssh_rc" in
-  0)
-    echo "SSH OK (rare: exited 0)."
-    ;;
-  1)
-    echo "SSH to GitHub succeeded (expected non-zero exit after greeting)."
-    ;;
-  255)
-    echo "SSH to GitHub failed with 255. If this is the first connection, the host key may not be trusted yet."
-    echo "We used StrictHostKeyChecking=accept-new to avoid prompts; if it still fails, check network/proxy and ~/.ssh permissions."
-    ;;
-  *)
-    echo "SSH returned code $ssh_rc. Proceeding."
-    ;;
-esac
-``
 
-
+echo "--- Enabling sshd daemon ---"
 # Enable SSH server (optional for inbound connections; not required for outbound Git)
 sudo systemctl enable --now sshd.service
 
