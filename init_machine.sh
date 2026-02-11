@@ -92,12 +92,7 @@ set +e
 ssh -T git@github.com || echo "Note: SSH test non-zero exit code is normal."
 set -e
 
-
-echo "--- Enabling sshd daemon ---"
-# Enable SSH server (optional for inbound connections; not required for outbound Git)
-sudo systemctl enable --now sshd.service
-
-# 5. Optional: Clone private repo and run post-install script
+# 5. Clone private repo and run post-install script
 echo "--- Cloning dotfiles repo ---"
 cd ~
 if [ -d "dotfiles/.git" ]; then
