@@ -70,12 +70,17 @@ echo "--- Ensuring SSH key is uploaded to GitHub ---"
 PUBKEY_CONTENT="$(cat "${SSH_KEY}.pub" | awk '{print $1" "$2}')"
 
 # Query existing SSH keys and check for an exact key match (by content)
-if gh ssh-key list 2>/dev/null | awk '{print $1" "$2}' | grep -qxF "$PUBKEY_CONTENT"; then
-    echo "--- SSH public key already present on GitHub; skipping upload ---"
+
+if gh api -H "Accept: application/vnd.github+json" /user/keys \
+    | jq -r '.[].key' \
+    | cut -d' ' -f1-2 \
+    | grep -qxF "$PUBKEY_CONTENT"; then
+  echo "--- SSH public key already present on GitHub; skipping upload ---"
 else
-    gh ssh-key add "${SSH_KEY}.pub" --title "Arch Machine $(hostname)"
-    echo "--- SSH key uploaded to GitHub ---"
+  gh ssh-key add "${SSH_KEY}.pub" --title "Arch Machine $(hostname)"
+  echo "--- SSH key uploaded to GitHub ---"
 fi
+
 
 # Verify authentication
 gh auth status -h github.com
