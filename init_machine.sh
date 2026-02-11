@@ -9,7 +9,6 @@
 set -euo pipefail
 # Debug trap: prints the line number and command that failed
 trap 'rc=$?; echo "ERROR: command failed (exit $rc) at line $LINENO: $BASH_COMMAND" >&2' ERR
-``
 
 
 # 1. Install GitHub CLI
